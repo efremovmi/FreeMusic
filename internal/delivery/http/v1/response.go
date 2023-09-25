@@ -2,7 +2,7 @@ package v1
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
+	"net/http"
 )
 
 type errorResponse struct {
@@ -14,6 +14,9 @@ type statusResponse struct {
 }
 
 func newErrorResponse(c *gin.Context, statusCode int, message string) {
-	logrus.Error(message)
-	c.AbortWithStatusJSON(statusCode, errorResponse{message})
+
+}
+
+func newOkResponse(c *gin.Context, response http.Response) {
+	c.JSON(http.StatusOK, response)
 }

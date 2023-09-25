@@ -1,8 +1,8 @@
 package main
 
-import "FreeMusic/pkg/app"
+import "FreeMusic/internal/app"
 
-const configPath = ""
+const configPath = "./configs/local_config.json"
 
 // @title FreeMusic
 // @version 1.0

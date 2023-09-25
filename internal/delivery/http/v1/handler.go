@@ -1,7 +1,7 @@
 package v1
 
 import (
-	"FreeMusic/pkg/service"
+	"FreeMusic/internal/service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/swaggo/files"       // swagger embed files
@@ -32,8 +32,9 @@ func (h *Handler) InitRoutes() *gin.Engine {
 
 	fileAPI := router.Group("/file", h.userIdentity)
 	{
-		fileAPI.POST("/save", h.safeFile)
-		fileAPI.DELETE("/delete", h.deleteFile)
+		fileAPI.POST("/upload", h.uploadFile)
+		fileAPI.POST("/download", h.downloadFile)
+		fileAPI.DELETE("/drop", h.dropFile)
 	}
 
 	return router

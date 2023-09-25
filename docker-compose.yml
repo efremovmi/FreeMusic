@@ -1,0 +1,21 @@
+version: '3.1'
+
+services:
+  mongo-file-db:
+    image: mongo
+    container_name: mongo-file
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: 1q2w3e4r5t
+      MONGO_DB_DEV_USERNAME: developer
+      MONGO_DB_DEV_PASSWORD: 1q2w3e4r5t
+      MONGO_DB_DATABASE: free-music
+      MONGO_DB_COLLECTION: file
+    ports:
+      - "2717:27017"
+    volumes:
+      - ../mongodb-data:/data/db
+      - ./migrations/mongo:/docker-entrypoint-initdb.d
+
+volumes:
+  mongodb-data:

@@ -4,12 +4,11 @@ import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"strings"
 )
 
 const (
 	authorizationHeader = "Authorization"
-	userCtx             = "userId"
+	userCtx             = "userID"
 )
 
 func (h *Handler) userIdentity(c *gin.Context) {
@@ -19,13 +18,7 @@ func (h *Handler) userIdentity(c *gin.Context) {
 		return
 	}
 
-	headerParts := strings.Split(header, " ")
-	if len(headerParts) != 2 || headerParts[0] != "Bearer" {
-		newErrorResponse(c, http.StatusUnauthorized, "invalid auth header")
-		return
-	}
-
-	if len(headerParts[1]) == 0 {
+	if len(header) == 0 {
 		newErrorResponse(c, http.StatusUnauthorized, "token is empty")
 		return
 	}
@@ -36,16 +29,16 @@ func (h *Handler) userIdentity(c *gin.Context) {
 	//	return
 	//}
 
-	c.Set(userCtx, 0)
+	c.Set(userCtx, uint64(1))
 }
 
-func getUserId(c *gin.Context) (int, error) {
+func getUserId(c *gin.Context) (uint64, error) {
 	id, ok := c.Get(userCtx)
 	if !ok {
 		return 0, errors.New("user id not found")
 	}
 
-	idInt, ok := id.(int)
+	idInt, ok := id.(uint64)
 	if !ok {
 		return 0, errors.New("user id is of invalid type")
 	}
