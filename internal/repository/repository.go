@@ -7,7 +7,7 @@ import (
 
 type FileStorage interface {
 	UploadFile(ctx context.Context, req models.UploadFileRequest) (*models.UploadFileResponse, error)
-	DownloadFile(ctx context.Context, req models.DownloadFileRequest) (*models.DownloadFileResponse, error)
+	DownloadFile(ctx context.Context, req models.DownloadFileRequest, fileExtension models.FileExtension) (*models.DownloadFileResponse, error)
 	//DeleteFile() error
 }
 

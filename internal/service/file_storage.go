@@ -27,8 +27,8 @@ func (f *fileManager) UploadFile(req models.UploadFileRequest) (*models.UploadFi
 	return resp, nil
 }
 
-func (f *fileManager) DownloadFile(req models.DownloadFileRequest) (*models.DownloadFileResponse, error) {
-	resp, err := f.repo.DownloadFile(context.Background(), req)
+func (f *fileManager) DownloadFile(req models.DownloadFileRequest, fileExtension models.FileExtension) (*models.DownloadFileResponse, error) {
+	resp, err := f.repo.DownloadFile(context.Background(), req, fileExtension)
 	if err != nil {
 		return nil, errors.Wrap(err, "DownloadFile error")
 	}

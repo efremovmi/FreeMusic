@@ -2,8 +2,11 @@ package main
 
 import (
 	"FreeMusic/internal/config"
+	"FreeMusic/internal/models"
+	"FreeMusic/internal/repository/mongodb"
 	"context"
 	"fmt"
+	"github.com/mailru/easyjson/buffer"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -37,24 +40,24 @@ func main() {
 	// Access the database and collection
 	database := client.Database(config.DbFilesName)
 
-	//mongoFileStorage, err := mongodb.NewMongoFileStorage(*config)
-	//if err != nil {
-	//	logrus.Fatalf("error getting NewMongoFileStorage: %v", err)
-	//}
+	mongoFileStorage, err := mongodb.NewMongoFileStorage(*config)
+	if err != nil {
+		logrus.Fatalf("error getting NewMongoFileStorage: %v", err)
+	}
 
-	//a := buffer.Buffer{Buf: make([]byte, 12345)}
-	//
-	//req := models.UploadFileRequest{
-	//	File:          a.ReadCloser(),
-	//	FileName:      "init_file",
-	//	FileExtension: "txt",
-	//	UserID:        0,
-	//}
+	a := buffer.Buffer{Buf: make([]byte, 12345)}
 
-	//_, err = mongoFileStorage.UploadFile(context.Background(), req)
-	//if err != nil {
-	//	logrus.Fatalf("error upload test file: %v", err)
-	//}
+	req := models.UploadFileRequest{
+		File:          a.ReadCloser(),
+		FileName:      "init_file",
+		FileExtension: "txt",
+		UserID:        0,
+	}
+
+	_, err = mongoFileStorage.UploadFile(context.Background(), req)
+	if err != nil {
+		logrus.Fatalf("error upload test file: %v", err)
+	}
 
 	// Define the index model
 	indexModel := mongo.IndexModel{

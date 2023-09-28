@@ -11,10 +11,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
 )
 
-func (m *mongoFileStorage) DownloadFile(ctx context.Context, req models.DownloadFileRequest) (*models.DownloadFileResponse, error) {
+func (m *mongoFileStorage) DownloadFile(ctx context.Context, req models.DownloadFileRequest, fileExtension models.FileExtension) (*models.DownloadFileResponse, error) {
 	db := m.client.Database(m.databaseName)
 
-	fileInfo, err := m.findIDHexByFileNameAndUserID(ctx, db, req)
+	fileInfo, err := m.findIDHexByFileNameAndUserID(ctx, db, req, fileExtension)
 	if err != nil {
 		return nil, errors.Wrap(err, "DownloadFile error")
 	}
@@ -33,12 +33,22 @@ func (m *mongoFileStorage) DownloadFile(ctx context.Context, req models.Download
 	return resp, nil
 }
 
-func (m *mongoFileStorage) findIDHexByFileNameAndUserID(ctx context.Context, db *mongo.Database, req models.DownloadFileRequest) (*models.FileInfo, error) {
+func (m *mongoFileStorage) findIDHexByFileNameAndUserID(ctx context.Context, db *mongo.Database, req models.DownloadFileRequest, fileExtension models.FileExtension) (*models.FileInfo, error) {
 	collection := db.Collection(m.fileCollectionName)
-	filter := bson.M{
-		"file_name": req.FileName,
-		"user_id":   req.UserID,
+	var filter primitive.M
+	if fileExtension == models.Any {
+		filter = bson.M{
+			"file_name": req.FileName,
+			"user_id":   req.UserID,
+		}
+	} else {
+		filter = bson.M{
+			"file_name":      req.FileName,
+			"user_id":        req.UserID,
+			"file_extension": fileExtension,
+		}
 	}
+
 	cursor, err := collection.Find(context.Background(), filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "findIDHexByFileNameAndUserID: can't get cursor on collections")

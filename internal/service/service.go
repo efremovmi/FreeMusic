@@ -7,7 +7,7 @@ import (
 
 type FileManager interface {
 	UploadFile(req models.UploadFileRequest) (*models.UploadFileResponse, error)
-	DownloadFile(req models.DownloadFileRequest) (*models.DownloadFileResponse, error)
+	DownloadFile(req models.DownloadFileRequest, fileExtension models.FileExtension) (*models.DownloadFileResponse, error)
 }
 
 type Service struct {
