@@ -35,3 +35,21 @@ func (f *fileManager) DownloadFile(req models.DownloadFileRequest, fileExtension
 
 	return resp, nil
 }
+
+func (f *fileManager) GetAllMusicFilesInfo(userID uint64) (*models.GetAllMusicFilesInfoResponse, error) {
+	resp, err := f.repo.GetAllMusicFilesInfo(context.Background(), userID)
+	if err != nil {
+		return nil, errors.Wrap(err, "DownloadFile error")
+	}
+
+	return resp, nil
+}
+
+func (f *fileManager) DropFile(req models.DropFileRequest) error {
+	err := f.repo.DropFile(context.Background(), req)
+	if err != nil {
+		return errors.Wrap(err, "DropFile error")
+	}
+
+	return nil
+}

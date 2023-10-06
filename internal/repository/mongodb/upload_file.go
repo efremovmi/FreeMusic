@@ -57,6 +57,10 @@ func (m *mongoFileStorage) saveInfoAboutFile(ctx context.Context, db *mongo.Data
 		"file_name":      req.FileName,
 	}
 
+	if len(req.Artist) != 0 {
+		document["artist"] = req.Artist
+	}
+
 	collection := db.Collection(m.fileCollectionName)
 
 	result, err := collection.InsertOne(ctx, document)

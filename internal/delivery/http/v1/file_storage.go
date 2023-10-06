@@ -3,6 +3,7 @@ package v1
 import (
 	"errors"
 	"fmt"
+	"github.com/dhowden/tag"
 	"io"
 	"net/http"
 	"path/filepath"
@@ -59,7 +60,6 @@ func (h *Handler) uploadFile(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't open file"})
 		return
 	}
-
 	defer file.Close()
 
 	req := models.UploadFileRequest{
@@ -67,6 +67,21 @@ func (h *Handler) uploadFile(c *gin.Context) {
 		FileName:      filename,
 		FileExtension: fileExtension,
 		UserID:        userID,
+	}
+
+	if fileExtension == models.MP3 {
+		metadata, err := tag.ReadFrom(file)
+		if err != nil {
+			logrus.Errorf("uploadFile err: %v", err)
+			c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't get metadata from mp3 file"})
+			return
+		}
+
+		artist := metadata.Artist()
+		if artist == "" {
+			artist = "Unknown artist"
+		}
+		req.Artist = artist
 	}
 
 	resp, err := h.services.UploadFile(req)
@@ -79,6 +94,51 @@ func (h *Handler) uploadFile(c *gin.Context) {
 		} else {
 			c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't save file"})
 		}
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
+// getAllMusicFilesInfo @Summary getAllMusicFilesInfo
+// @Tags FileStorage
+// @Description upload file
+//
+// @Produce  json
+//
+// @Param Authorization header string true "Auth header"
+//
+// @Success 200 {object} models.GetAllMusicFilesInfoResponse
+// @Success 200 {integer} integer 1
+// @Failure 400,404 {object} errorResponse
+// @Failure 500 {object} errorResponse
+// @Failure default {object} errorResponse
+// @Router /file/get-all-music [get]
+func (h *Handler) getAllMusicFilesInfo(c *gin.Context) {
+	userID, err := getUserId(c)
+	if err != nil {
+		logrus.Errorf("GetAllMusicFilesInfo err: %v", err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't get userID"})
+		return
+	}
+
+	resp, err := h.services.GetAllMusicFilesInfo(userID)
+	if err != nil {
+		logrus.Errorf("downloadFile err: %v", err)
+
+		var appError *appError.NoData
+		if errors.As(err, &appError) {
+			c.AbortWithStatusJSON(http.StatusNotFound, errorResponse{"no data"})
+		} else {
+			c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't download file"})
+		}
+
+		return
+	}
+	if err != nil {
+		logrus.Errorf("GetAllMusicFilesInfo err: %v", err)
+
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't get music"})
 		return
 	}
 
@@ -135,7 +195,8 @@ func (h *Handler) downloadFile(c *gin.Context) {
 	}
 	defer resp.FileStream.Close()
 
-	c.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", resp.FileName))
+	fullFileName := resp.FileInfo.FileName + resp.FileInfo.FileExtension
+	c.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fullFileName))
 	c.Writer.Header().Set("Content-Type", "application/octet-stream")
 
 	_, err = io.Copy(c.Writer, resp.FileStream)
@@ -161,9 +222,8 @@ func (h *Handler) downloadFile(c *gin.Context) {
 // @Failure 400,404 {object} errorResponse
 // @Failure 500 {object} errorResponse
 // @Failure default {object} errorResponse
-// @Router /file/stream_audio [post]
+// @Router /file/stream-audio [post]
 func (h *Handler) streamAudio(c *gin.Context) {
-	// TODO: доделать
 	userID, err := getUserId(c)
 	if err != nil {
 		logrus.Errorf("downloadFile err: %v", err)
@@ -199,13 +259,16 @@ func (h *Handler) streamAudio(c *gin.Context) {
 	defer resp.FileStream.Close()
 
 	c.Header("Content-Type", "audio/mpeg")
-	c.Status(http.StatusOK)
+	c.Header("filename", resp.FileInfo.FileName)
+	c.Header("artist", resp.FileInfo.Artist)
+	c.Writer.WriteHeader(http.StatusOK)
 
 	bufferSize := 1024
 	buffer := make([]byte, bufferSize)
 	for {
 		bytesRead, err := resp.FileStream.Read(buffer)
 		if err != nil {
+			c.Writer.WriteHeader(http.StatusBadRequest)
 			break
 		}
 		c.Writer.Write(buffer[:bytesRead])
@@ -216,14 +279,46 @@ func (h *Handler) streamAudio(c *gin.Context) {
 // DropFile @Summary DropFile
 // @Tags FileStorage
 // @Description drop file
-// @Accept  json
+// @Accept multipart/form-data
 // @Produce  json
-// @Param group_id   path int true "Group ID"
+//
+// @Param Authorization header string true "Auth header"
+// @Param filename formData string true "file name"
+//
 // @Success 200 {integer} integer 1
 // @Failure 400,404 {object} errorResponse
 // @Failure 500 {object} errorResponse
 // @Failure default {object} errorResponse
-// @Router /file/drop [post]
+// @Router /file/drop [delete]
 func (h *Handler) dropFile(c *gin.Context) {
+	userID, err := getUserId(c)
+	if err != nil {
+		logrus.Errorf("uploadFile err: %v", err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't get userID"})
+		return
+	}
 
+	filename := c.PostForm("filename")
+	if len(filename) == 0 {
+		logrus.Errorf("uploadFile err: %v", err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't get filename"})
+		return
+	}
+
+	req := models.DropFileRequest{
+		FileName: filename,
+		UserID:   userID,
+	}
+
+	err = h.services.DropFile(req)
+	if err != nil {
+		logrus.Errorf("DropFile err: %v", err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't drop file"})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, map[string]interface{}{
+		"res": "ok",
+	})
 }

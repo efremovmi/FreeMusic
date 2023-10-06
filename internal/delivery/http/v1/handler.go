@@ -45,7 +45,8 @@ func (h *Handler) InitRoutes() *gin.Engine {
 	fileAPI := router.Group("/file", h.userIdentity)
 	{
 		fileAPI.POST("/upload", h.uploadFile)
-		fileAPI.POST("/stream_audio", h.streamAudio)
+		fileAPI.GET("/get-all-music", h.getAllMusicFilesInfo)
+		fileAPI.POST("/stream-audio", h.streamAudio)
 		fileAPI.POST("/download", h.downloadFile)
 		fileAPI.DELETE("/drop", h.dropFile)
 	}

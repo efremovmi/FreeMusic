@@ -14,12 +14,12 @@ import (
 func (m *mongoFileStorage) DownloadFile(ctx context.Context, req models.DownloadFileRequest, fileExtension models.FileExtension) (*models.DownloadFileResponse, error) {
 	db := m.client.Database(m.databaseName)
 
-	fileInfo, err := m.findIDHexByFileNameAndUserID(ctx, db, req, fileExtension)
+	fileInfo, err := findIDHexByFileNameAndUserID(m, db, req, fileExtension)
 	if err != nil {
 		return nil, errors.Wrap(err, "DownloadFile error")
 	}
 
-	resp, err := m.getFileStreamByFileIDHex(ctx, db, fileInfo)
+	resp, err := getFileStreamByFileIDHex(db, fileInfo)
 	if err != nil {
 		return nil, errors.Wrap(err, "DownloadFile error")
 	}
@@ -33,7 +33,7 @@ func (m *mongoFileStorage) DownloadFile(ctx context.Context, req models.Download
 	return resp, nil
 }
 
-func (m *mongoFileStorage) findIDHexByFileNameAndUserID(ctx context.Context, db *mongo.Database, req models.DownloadFileRequest, fileExtension models.FileExtension) (*models.FileInfo, error) {
+func findIDHexByFileNameAndUserID(m *mongoFileStorage, db *mongo.Database, req models.DownloadFileRequest, fileExtension models.FileExtension) (*models.FileInfo, error) {
 	collection := db.Collection(m.fileCollectionName)
 	var filter primitive.M
 	if fileExtension == models.Any {
@@ -80,7 +80,7 @@ func (m *mongoFileStorage) findIDHexByFileNameAndUserID(ctx context.Context, db 
 	return &fileInfo, nil
 }
 
-func (m *mongoFileStorage) getFileStreamByFileIDHex(ctx context.Context, db *mongo.Database, fileInfo *models.FileInfo) (*models.DownloadFileResponse, error) {
+func getFileStreamByFileIDHex(db *mongo.Database, fileInfo *models.FileInfo) (*models.DownloadFileResponse, error) {
 	if fileInfo == nil {
 		return nil, errors.Wrap(nil, "getFileStreamByFileIDHex: get null fileInfo")
 	}
@@ -101,7 +101,7 @@ func (m *mongoFileStorage) getFileStreamByFileIDHex(ctx context.Context, db *mon
 	}
 
 	return &models.DownloadFileResponse{
-		FileName:   fileInfo.FileName + fileInfo.FileExtension,
+		FileInfo:   *fileInfo,
 		FileStream: fileStream,
 	}, nil
 }

@@ -8,7 +8,8 @@ import (
 type FileStorage interface {
 	UploadFile(ctx context.Context, req models.UploadFileRequest) (*models.UploadFileResponse, error)
 	DownloadFile(ctx context.Context, req models.DownloadFileRequest, fileExtension models.FileExtension) (*models.DownloadFileResponse, error)
-	//DeleteFile() error
+	GetAllMusicFilesInfo(ctx context.Context, userID uint64) (*models.GetAllMusicFilesInfoResponse, error)
+	DropFile(ctx context.Context, request models.DropFileRequest) error
 }
 
 type Repository struct {
