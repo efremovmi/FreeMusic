@@ -4,6 +4,7 @@ import (
 	appError "FreeMusic/internal/app_errors"
 	"FreeMusic/internal/models"
 	"context"
+	"fmt"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -27,6 +28,7 @@ func (m *mongoFileStorage) GetAllMusicFilesInfo(ctx context.Context, userID uint
 	var isGetDataFromDB bool
 
 	resp.InfoAboutMusicFile = make([]models.InfoAboutMusicFile, 0)
+	var count uint64
 	for cursor.Next(context.Background()) {
 		isGetDataFromDB = true
 		if err := cursor.Decode(&fileInfo); err != nil {
@@ -36,7 +38,10 @@ func (m *mongoFileStorage) GetAllMusicFilesInfo(ctx context.Context, userID uint
 		resp.InfoAboutMusicFile = append(resp.InfoAboutMusicFile, models.InfoAboutMusicFile{
 			Artist:   fileInfo.Artist,
 			FileName: fileInfo.FileName,
+			Duration: fileInfo.Duration,
+			Tag:      fmt.Sprintf("tag-%d", count),
 		})
+		count++
 	}
 
 	if err := cursor.Err(); err != nil {

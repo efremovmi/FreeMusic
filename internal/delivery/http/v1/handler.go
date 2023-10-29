@@ -21,7 +21,6 @@ func NewHandler(services *service.Service) *Handler {
 
 func (h *Handler) InitRoutes() *gin.Engine {
 	router := gin.Default()
-	//r := gin.Default()
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -48,6 +47,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		fileAPI.GET("/get-all-music", h.getAllMusicFilesInfo)
 		fileAPI.POST("/stream-audio", h.streamAudio)
 		fileAPI.POST("/download", h.downloadFile)
+		fileAPI.POST("/download-audio-image-file", h.downloadAudioImageFile)
 		fileAPI.DELETE("/drop", h.dropFile)
 	}
 

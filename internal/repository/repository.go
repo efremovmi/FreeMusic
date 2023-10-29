@@ -8,6 +8,7 @@ import (
 type FileStorage interface {
 	UploadFile(ctx context.Context, req models.UploadFileRequest) (*models.UploadFileResponse, error)
 	DownloadFile(ctx context.Context, req models.DownloadFileRequest, fileExtension models.FileExtension) (*models.DownloadFileResponse, error)
+	DownloadAudioImageFile(ctx context.Context, req models.DownloadFileRequest) (*models.DownloadAudioImageFileResponse, error)
 	GetAllMusicFilesInfo(ctx context.Context, userID uint64) (*models.GetAllMusicFilesInfoResponse, error)
 	DropFile(ctx context.Context, request models.DropFileRequest) error
 }

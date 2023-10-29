@@ -19,18 +19,28 @@ func (m *mongoFileStorage) DownloadFile(ctx context.Context, req models.Download
 		return nil, errors.Wrap(err, "DownloadFile error")
 	}
 
-	resp, err := getFileStreamByFileIDHex(db, fileInfo)
-	if err != nil {
-		return nil, errors.Wrap(err, "DownloadFile error")
-	}
-
-	if err == nil && resp == nil {
+	if fileInfo == nil {
 		return nil, &app_errors.FileNotFound{
 			Message: "file not found",
 		}
 	}
 
-	return resp, nil
+	fileStream, err := getFileStreamByFileIDHex(db, fileInfo.FileIDHex)
+	if err != nil {
+		return nil, errors.Wrap(err, "DownloadFile error")
+	}
+
+	if fileStream == nil {
+		return nil, &app_errors.FileNotFound{
+			Message: "file not found",
+		}
+	}
+
+	var resp models.DownloadFileResponse
+	resp.FileInfo = fileInfo
+	resp.FileStream = fileStream
+
+	return &resp, nil
 }
 
 func findIDHexByFileNameAndUserID(m *mongoFileStorage, db *mongo.Database, req models.DownloadFileRequest, fileExtension models.FileExtension) (*models.FileInfo, error) {
@@ -80,9 +90,9 @@ func findIDHexByFileNameAndUserID(m *mongoFileStorage, db *mongo.Database, req m
 	return &fileInfo, nil
 }
 
-func getFileStreamByFileIDHex(db *mongo.Database, fileInfo *models.FileInfo) (*models.DownloadFileResponse, error) {
-	if fileInfo == nil {
-		return nil, errors.Wrap(nil, "getFileStreamByFileIDHex: get null fileInfo")
+func getFileStreamByFileIDHex(db *mongo.Database, fileIDHex string) (*gridfs.DownloadStream, error) {
+	if fileIDHex == "" {
+		return nil, errors.Wrap(nil, "getFileStreamByFileIDHex: get empty fileIDHex")
 	}
 
 	fs, err := gridfs.NewBucket(db)
@@ -90,7 +100,7 @@ func getFileStreamByFileIDHex(db *mongo.Database, fileInfo *models.FileInfo) (*m
 		return nil, errors.Wrap(err, "getFileStreamByFileIDHex: can't get bucket")
 	}
 
-	fileID, err := primitive.ObjectIDFromHex(fileInfo.FileIDHex)
+	fileID, err := primitive.ObjectIDFromHex(fileIDHex)
 	if err != nil {
 		return nil, errors.Wrap(err, "getFileStreamByFileIDHex: can't convert FileIDHex to primitive.ObjectIDFromHex")
 	}
@@ -100,8 +110,5 @@ func getFileStreamByFileIDHex(db *mongo.Database, fileInfo *models.FileInfo) (*m
 		return nil, errors.Wrap(err, "getFileStreamByFileIDHex: can't get file stream")
 	}
 
-	return &models.DownloadFileResponse{
-		FileInfo:   *fileInfo,
-		FileStream: fileStream,
-	}, nil
+	return fileStream, nil
 }

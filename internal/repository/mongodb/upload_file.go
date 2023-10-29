@@ -3,6 +3,7 @@ package mongodb
 import (
 	appError "FreeMusic/internal/app_errors"
 	"FreeMusic/internal/models"
+	"bytes"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -19,14 +20,48 @@ func (m *mongoFileStorage) UploadFile(ctx context.Context, req models.UploadFile
 	if err != nil {
 		return nil, errors.Wrap(err, "UploadFile error")
 	}
+	defer m.dropFileIfError(ctx, db, fileIDHex, err)
 
-	resultID, err := m.saveInfoAboutFile(ctx, db, req, fileIDHex)
+	fileImageIDHex, err := m.saveFileImageInFileStorage(db, req)
 	if err != nil {
-		m.dropFileInFileStorage(ctx, db, fileIDHex)
+
+		return nil, errors.Wrap(err, "UploadFile error")
+	}
+	defer m.dropFileIfError(ctx, db, fileImageIDHex, err)
+
+	resultID, err := m.saveInfoAboutFile(ctx, db, req, fileIDHex, fileImageIDHex)
+	if err != nil {
 		return nil, errors.Wrap(err, "UploadFile error")
 	}
 
 	return &models.UploadFileResponse{IDHex: resultID}, nil
+}
+
+func (m *mongoFileStorage) dropFileIfError(ctx context.Context, db *mongo.Database, IDHex string, err error) {
+	if err != nil {
+		m.dropFileInFileStorage(ctx, db, IDHex)
+	}
+}
+
+func (m *mongoFileStorage) saveFileImageInFileStorage(db *mongo.Database, req models.UploadFileRequest) (string, error) {
+	fs, err := gridfs.NewBucket(db)
+	if err != nil {
+		return "", errors.Wrap(err, "saveFileInFileStorage: can't get bucket")
+	}
+
+	uploadStream, err := fs.OpenUploadStream(req.FileName + "_image")
+	if err != nil {
+		return "", errors.Wrap(err, "saveFileImageInFileStorage: can't get upload stream")
+	}
+	defer uploadStream.Close()
+
+	fileImageReader := bytes.NewReader(req.FileImage)
+	_, err = io.Copy(uploadStream, fileImageReader)
+	if err != nil {
+		return "", errors.Wrap(err, "saveFileImageInFileStorage: can't save file")
+	}
+
+	return uploadStream.FileID.(primitive.ObjectID).Hex(), nil
 }
 
 func (m *mongoFileStorage) saveFileInFileStorage(db *mongo.Database, req models.UploadFileRequest) (string, error) {
@@ -49,16 +84,21 @@ func (m *mongoFileStorage) saveFileInFileStorage(db *mongo.Database, req models.
 	return uploadStream.FileID.(primitive.ObjectID).Hex(), nil
 }
 
-func (m *mongoFileStorage) saveInfoAboutFile(ctx context.Context, db *mongo.Database, req models.UploadFileRequest, fileIDHex string) (string, error) {
+func (m *mongoFileStorage) saveInfoAboutFile(ctx context.Context, db *mongo.Database, req models.UploadFileRequest, fileIDHex, fileImageIDHex string) (string, error) {
 	document := bson.M{
-		"user_id":        req.UserID,
-		"file_id_hex":    fileIDHex,
-		"file_extension": req.FileExtension,
-		"file_name":      req.FileName,
+		"user_id":           req.UserID,
+		"file_id_hex":       fileIDHex,
+		"file_extension":    req.FileExtension,
+		"file_name":         req.FileName,
+		"file_image_id_hex": fileImageIDHex,
 	}
 
 	if len(req.Artist) != 0 {
 		document["artist"] = req.Artist
+	}
+
+	if len(req.Duration) != 0 {
+		document["duration"] = req.Duration
 	}
 
 	collection := db.Collection(m.fileCollectionName)

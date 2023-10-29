@@ -1,12 +1,13 @@
 package v1
 
 import (
+	"FreeMusic/internal/utils"
 	"errors"
 	"fmt"
-	"github.com/dhowden/tag"
 	"io"
 	"net/http"
 	"path/filepath"
+	"time"
 
 	appError "FreeMusic/internal/app_errors"
 	"FreeMusic/internal/models"
@@ -70,18 +71,12 @@ func (h *Handler) uploadFile(c *gin.Context) {
 	}
 
 	if fileExtension == models.MP3 {
-		metadata, err := tag.ReadFrom(file)
+		req.FileImage, req.Duration, req.Artist, err = utils.HandleMP3File(file)
 		if err != nil {
 			logrus.Errorf("uploadFile err: %v", err)
-			c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't get metadata from mp3 file"})
+			c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't handle mp3 file"})
 			return
 		}
-
-		artist := metadata.Artist()
-		if artist == "" {
-			artist = "Unknown artist"
-		}
-		req.Artist = artist
 	}
 
 	resp, err := h.services.UploadFile(req)
@@ -207,6 +202,71 @@ func (h *Handler) downloadFile(c *gin.Context) {
 	}
 
 	c.Writer.WriteHeader(200)
+}
+
+// DownloadAudioImageFile @Summary DownloadAudioImageFile
+// @Tags FileStorage
+// @Description download audio image
+// @Accept multipart/form-data
+// @Produce  json
+//
+// @Param Authorization header string true "Auth header"
+// @Param filename formData string true "file name"
+//
+// @Success 200 {integer} integer 1
+// @Failure 400,404 {object} errorResponse
+// @Failure 500 {object} errorResponse
+// @Failure default {object} errorResponse
+// @Router /file/download-audio-image-file [post]
+func (h *Handler) downloadAudioImageFile(c *gin.Context) {
+	userID, err := getUserId(c)
+	if err != nil {
+		logrus.Errorf("downloadFile err: %v", err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't get userID"})
+		return
+	}
+
+	filename := c.PostForm("filename")
+	if len(filename) == 0 {
+		logrus.Errorf("downloadFile err: %v", err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't get filename"})
+		return
+	}
+
+	req := models.DownloadFileRequest{
+		FileName: filename,
+		UserID:   userID,
+	}
+
+	resp, err := h.services.DownloadAudioImageFile(req)
+	if err != nil {
+		logrus.Errorf("downloadAudioImageFile err: %v", err)
+
+		var appError *appError.FileNotFound
+		if errors.As(err, &appError) {
+			c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"file is not found"})
+		} else {
+			c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't download file"})
+		}
+
+		return
+	}
+
+	fullFileName := resp.FileInfo.FileName + ".jpg"
+	c.Header("Content-Type", "image/jpeg")
+
+	http.ServeContent(c.Writer, c.Request, fullFileName, time.Now(), resp.FileBody)
+
+	//var buf bytes.Buffer
+	//resp.FileStream.Read()
+	//_, err = io.Copy(buff, resp.FileStream)
+	//if err != nil {
+	//	logrus.Errorf("downloadAudioImageFile err: can't copy file to resp stream, err: %v", err)
+	//	c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't download file"})
+	//	return
+	//}
+
+	//c.Writer.WriteHeader(200)
 }
 
 // StreamAudio @Summary StreamAudio

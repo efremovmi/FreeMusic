@@ -13,20 +13,25 @@ import (
 func (m *mongoFileStorage) DropFile(ctx context.Context, req models.DropFileRequest) error {
 	db := m.client.Database(m.databaseName)
 
-	fileIDHex, err := m.dropFileInfo(db, req)
+	fileInfo, err := m.dropFileInfo(db, req)
 	if err != nil {
 		return errors.Wrap(err, "DropFile error")
 	}
 
-	err = m.dropFileInFileStorage(ctx, db, fileIDHex)
-	if err != nil {
-		return errors.Wrap(err, "DropFile error")
+	dropFileErr := m.dropFileInFileStorage(ctx, db, fileInfo.FileIDHex)
+	if dropFileErr != nil {
+		err = errors.Wrap(dropFileErr, "DropFile error")
+	}
+
+	dropFileImageErr := m.dropFileInFileStorage(ctx, db, fileInfo.FileImageIDHex)
+	if dropFileImageErr != nil {
+		err = errors.Wrap(err, "DropFile error")
 	}
 
 	return nil
 }
 
-func (m *mongoFileStorage) dropFileInfo(db *mongo.Database, req models.DropFileRequest) (string, error) {
+func (m *mongoFileStorage) dropFileInfo(db *mongo.Database, req models.DropFileRequest) (*models.FileInfo, error) {
 	filter := bson.M{
 		"file_name": req.FileName,
 		"user_id":   req.UserID,
@@ -37,10 +42,10 @@ func (m *mongoFileStorage) dropFileInfo(db *mongo.Database, req models.DropFileR
 
 	err := collection.FindOneAndDelete(context.Background(), filter).Decode(&deletedDocument)
 	if err != nil {
-		return "", errors.Wrap(err, "dropFileInfo: can't drop file info")
+		return nil, errors.Wrap(err, "dropFileInfo: can't drop file info")
 	}
 
-	return deletedDocument.FileIDHex, nil
+	return &deletedDocument, nil
 }
 
 func (m *mongoFileStorage) dropFileInFileStorage(ctx context.Context, db *mongo.Database, fileIDHex string) error {
@@ -55,7 +60,7 @@ func (m *mongoFileStorage) dropFileInFileStorage(ctx context.Context, db *mongo.
 	}
 
 	err = fs.Delete(fileID)
-	if err != nil {
+	if err != nil && err.Error() != "file with given parameters not found" {
 		return errors.Wrap(err, "dropFileInFileStorage: can't delete file by fileIDHex")
 	}
 

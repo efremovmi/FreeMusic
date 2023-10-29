@@ -36,6 +36,15 @@ func (f *fileManager) DownloadFile(req models.DownloadFileRequest, fileExtension
 	return resp, nil
 }
 
+func (f *fileManager) DownloadAudioImageFile(req models.DownloadFileRequest) (*models.DownloadAudioImageFileResponse, error) {
+	resp, err := f.repo.DownloadAudioImageFile(context.Background(), req)
+	if err != nil {
+		return nil, errors.Wrap(err, "DownloadAudioImageFile error")
+	}
+
+	return resp, nil
+}
+
 func (f *fileManager) GetAllMusicFilesInfo(userID uint64) (*models.GetAllMusicFilesInfoResponse, error) {
 	resp, err := f.repo.GetAllMusicFilesInfo(context.Background(), userID)
 	if err != nil {
