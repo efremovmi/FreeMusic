@@ -2,9 +2,10 @@ package models
 
 import (
 	"bytes"
+	"io"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
-	"io"
 )
 
 // DownloadFileRequest ...
@@ -36,6 +37,7 @@ type UploadFileRequest struct {
 	Duration      string        `json:"duration"`
 }
 
+// DropFileRequest ...
 type DropFileRequest struct {
 	FileName string `json:"filename"`
 	UserID   uint64 `json:"user_id"`

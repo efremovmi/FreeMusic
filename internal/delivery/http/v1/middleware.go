@@ -2,8 +2,9 @@ package v1
 
 import (
 	"errors"
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -11,15 +12,16 @@ const (
 	userCtx             = "userID"
 )
 
+// userIdentity ...
 func (h *Handler) userIdentity(c *gin.Context) {
 	header := c.GetHeader(authorizationHeader)
 	if header == "" {
-		newErrorResponse(c, http.StatusUnauthorized, "empty auth header")
+		c.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse{"empty auth header"})
 		return
 	}
 
 	if len(header) == 0 {
-		newErrorResponse(c, http.StatusUnauthorized, "token is empty")
+		c.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse{"token is empty"})
 		return
 	}
 
@@ -32,6 +34,7 @@ func (h *Handler) userIdentity(c *gin.Context) {
 	c.Set(userCtx, uint64(1))
 }
 
+// getUserId ...
 func getUserId(c *gin.Context) (uint64, error) {
 	id, ok := c.Get(userCtx)
 	if !ok {

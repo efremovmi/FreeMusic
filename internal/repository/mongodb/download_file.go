@@ -1,9 +1,11 @@
 package mongodb
 
 import (
+	"context"
+
 	"FreeMusic/internal/app_errors"
 	"FreeMusic/internal/models"
-	"context"
+
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -11,10 +13,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
 )
 
+// DownloadFile ...
 func (m *mongoFileStorage) DownloadFile(ctx context.Context, req models.DownloadFileRequest, fileExtension models.FileExtension) (*models.DownloadFileResponse, error) {
 	db := m.client.Database(m.databaseName)
 
-	fileInfo, err := findIDHexByFileNameAndUserID(m, db, req, fileExtension)
+	fileInfo, err := findIDHexByFileNameAndUserID(ctx, m, db, req, fileExtension)
 	if err != nil {
 		return nil, errors.Wrap(err, "DownloadFile error")
 	}
@@ -43,7 +46,8 @@ func (m *mongoFileStorage) DownloadFile(ctx context.Context, req models.Download
 	return &resp, nil
 }
 
-func findIDHexByFileNameAndUserID(m *mongoFileStorage, db *mongo.Database, req models.DownloadFileRequest, fileExtension models.FileExtension) (*models.FileInfo, error) {
+// findIDHexByFileNameAndUserID ...
+func findIDHexByFileNameAndUserID(ctx context.Context, m *mongoFileStorage, db *mongo.Database, req models.DownloadFileRequest, fileExtension models.FileExtension) (*models.FileInfo, error) {
 	collection := db.Collection(m.fileCollectionName)
 	var filter primitive.M
 	if fileExtension == models.Any {
@@ -59,15 +63,15 @@ func findIDHexByFileNameAndUserID(m *mongoFileStorage, db *mongo.Database, req m
 		}
 	}
 
-	cursor, err := collection.Find(context.Background(), filter)
+	cursor, err := collection.Find(ctx, filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "findIDHexByFileNameAndUserID: can't get cursor on collections")
 	}
-	defer cursor.Close(context.Background())
+	defer cursor.Close(ctx)
 
 	var fileInfo models.FileInfo
 	var isGetDataFromDB bool
-	for cursor.Next(context.Background()) {
+	for cursor.Next(ctx) {
 		isGetDataFromDB = true
 		if err := cursor.Decode(&fileInfo); err != nil {
 			return nil, errors.Wrap(err, "findIDHexByFileNameAndUserID: can't decode file from db")
@@ -75,7 +79,7 @@ func findIDHexByFileNameAndUserID(m *mongoFileStorage, db *mongo.Database, req m
 		break
 	}
 
-	if err := cursor.Err(); err != nil {
+	if err = cursor.Err(); err != nil {
 		return nil, errors.Wrap(err, "findIDHexByFileNameAndUserID: cursor error")
 	}
 
@@ -90,6 +94,7 @@ func findIDHexByFileNameAndUserID(m *mongoFileStorage, db *mongo.Database, req m
 	return &fileInfo, nil
 }
 
+// getFileStreamByFileIDHex ...
 func getFileStreamByFileIDHex(db *mongo.Database, fileIDHex string) (*gridfs.DownloadStream, error) {
 	if fileIDHex == "" {
 		return nil, errors.Wrap(nil, "getFileStreamByFileIDHex: get empty fileIDHex")

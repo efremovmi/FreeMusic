@@ -1,18 +1,22 @@
 package server
 
 import (
-	"FreeMusic/internal/config"
 	"fmt"
-	"golang.org/x/net/context"
 	"net/http"
 	"time"
+
+	"FreeMusic/internal/config"
+
+	"golang.org/x/net/context"
 )
 
+// server ...
 type server struct {
 	httpServer *http.Server
 	config     config.Config
 }
 
+// NewServer ...
 func NewServer(conf *config.Config) *server {
 	return &server{
 		httpServer: nil,
@@ -20,6 +24,7 @@ func NewServer(conf *config.Config) *server {
 	}
 }
 
+// Run ...
 func (s *server) Run(handler http.Handler) error {
 	s.httpServer = &http.Server{
 		Addr:           fmt.Sprintf("%s:%d", s.config.AppHost, s.config.AppPort),
@@ -32,6 +37,7 @@ func (s *server) Run(handler http.Handler) error {
 	return s.httpServer.ListenAndServe()
 }
 
+// Shutdown ...
 func (s *server) Shutdown(ctx context.Context) error {
 	return s.httpServer.Shutdown(ctx)
 }

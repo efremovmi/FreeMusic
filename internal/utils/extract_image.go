@@ -8,10 +8,11 @@ import (
 	"image/jpeg"
 )
 
+// CreateWhiteQuestionImage ...
 func CreateWhiteQuestionImage(width, height int) []byte {
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
-	white := color.RGBA{255, 255, 255, 255}
-	draw.Draw(img, img.Bounds(), &image.Uniform{white}, image.Point{}, draw.Src)
+	white := color.RGBA{R: 255, G: 255, B: 255, A: 255}
+	draw.Draw(img, img.Bounds(), &image.Uniform{C: white}, image.Point{}, draw.Src)
 
 	// Рисуем знак вопроса (можете изменить на другой символ или изображение)
 	questionMark := drawFont()
@@ -24,11 +25,12 @@ func CreateWhiteQuestionImage(width, height int) []byte {
 	return buf.Bytes()
 }
 
+// drawFont ...
 func drawFont() *image.RGBA {
 	width, height := 10, 20
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
-	black := color.RGBA{0, 0, 0, 255}
-	white := color.RGBA{255, 255, 255, 255}
+	black := color.RGBA{A: 255}
+	white := color.RGBA{R: 255, G: 255, B: 255, A: 255}
 
 	for x := 0; x < width; x++ {
 		for y := 0; y < height; y++ {

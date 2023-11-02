@@ -1,21 +1,23 @@
 package main
 
 import (
+	"context"
+	"fmt"
+
 	"FreeMusic/internal/config"
 	"FreeMusic/internal/models"
 	"FreeMusic/internal/repository/mongodb"
-	"context"
-	"fmt"
+
 	"github.com/mailru/easyjson/buffer"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
 )
 
 const configPath = "./configs/local_config.json"
 
+// main ...
 func main() {
 	config, err := config.InitConfig(configPath)
 	if err != nil {
@@ -40,7 +42,7 @@ func main() {
 	// Access the database and collection
 	database := client.Database(config.DbFilesName)
 
-	mongoFileStorage, err := mongodb.NewMongoFileStorage(*config)
+	mongoFileStorage, err := mongodb.NewMongoFileStorage(config)
 	if err != nil {
 		logrus.Fatalf("error getting NewMongoFileStorage: %v", err)
 	}
@@ -73,8 +75,8 @@ func main() {
 	// Create the index
 	_, err = collection.Indexes().CreateOne(context.Background(), indexModel)
 	if err != nil {
-		log.Fatalf("error create index: %v", err)
+		logrus.Fatalf("error create index: %v", err)
 	}
 
-	log.Println("Index created successfully.")
+	logrus.Println("Index created successfully.")
 }

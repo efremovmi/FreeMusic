@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"FreeMusic/internal/utils"
 	"errors"
 	"fmt"
 	"io"
@@ -11,11 +10,13 @@ import (
 
 	appError "FreeMusic/internal/app_errors"
 	"FreeMusic/internal/models"
+	"FreeMusic/internal/utils"
+
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
 
-// UploadFile @Summary UploadFile
+// uploadFile @Summary UploadFile
 // @Tags FileStorage
 // @Description upload file
 // @Accept multipart/form-data
@@ -30,7 +31,7 @@ import (
 // @Failure 400,404 {object} errorResponse
 // @Failure 500 {object} errorResponse
 // @Failure default {object} errorResponse
-// @Router /file/upload [post]
+// @Router /v1/file/upload [post]
 func (h *Handler) uploadFile(c *gin.Context) {
 	userID, err := getUserId(c)
 	if err != nil {
@@ -39,7 +40,7 @@ func (h *Handler) uploadFile(c *gin.Context) {
 		return
 	}
 
-	fileHeader, err := c.FormFile("body") // "file" - это имя поля формы для загрузки файла
+	fileHeader, err := c.FormFile("body")
 	if err != nil {
 		logrus.Errorf("uploadFile err: %v", err)
 		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't file"})
@@ -97,7 +98,7 @@ func (h *Handler) uploadFile(c *gin.Context) {
 
 // getAllMusicFilesInfo @Summary getAllMusicFilesInfo
 // @Tags FileStorage
-// @Description upload file
+// @Description get all music files info (name, artist, duration, tag)
 //
 // @Produce  json
 //
@@ -108,18 +109,18 @@ func (h *Handler) uploadFile(c *gin.Context) {
 // @Failure 400,404 {object} errorResponse
 // @Failure 500 {object} errorResponse
 // @Failure default {object} errorResponse
-// @Router /file/get-all-music [get]
+// @Router /v1/file/get-all-music [get]
 func (h *Handler) getAllMusicFilesInfo(c *gin.Context) {
 	userID, err := getUserId(c)
 	if err != nil {
-		logrus.Errorf("GetAllMusicFilesInfo err: %v", err)
+		logrus.Errorf("getAllMusicFilesInfo err: %v", err)
 		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't get userID"})
 		return
 	}
 
 	resp, err := h.services.GetAllMusicFilesInfo(userID)
 	if err != nil {
-		logrus.Errorf("downloadFile err: %v", err)
+		logrus.Errorf("getAllMusicFilesInfo err: %v", err)
 
 		var appError *appError.NoData
 		if errors.As(err, &appError) {
@@ -131,17 +132,16 @@ func (h *Handler) getAllMusicFilesInfo(c *gin.Context) {
 		return
 	}
 	if err != nil {
-		logrus.Errorf("GetAllMusicFilesInfo err: %v", err)
+		logrus.Errorf("getAllMusicFilesInfo err: %v", err)
 
 		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't get music"})
 		return
 	}
 
 	c.JSON(http.StatusOK, resp)
-
 }
 
-// DownloadFile @Summary DownloadFile
+// downloadFile @Summary DownloadFile
 // @Tags FileStorage
 // @Description download file
 // @Accept multipart/form-data
@@ -154,7 +154,7 @@ func (h *Handler) getAllMusicFilesInfo(c *gin.Context) {
 // @Failure 400,404 {object} errorResponse
 // @Failure 500 {object} errorResponse
 // @Failure default {object} errorResponse
-// @Router /file/download [post]
+// @Router /v1/file/download [post]
 func (h *Handler) downloadFile(c *gin.Context) {
 	userID, err := getUserId(c)
 	if err != nil {
@@ -204,7 +204,7 @@ func (h *Handler) downloadFile(c *gin.Context) {
 	c.Writer.WriteHeader(200)
 }
 
-// DownloadAudioImageFile @Summary DownloadAudioImageFile
+// downloadAudioImage @Summary DownloadAudioImageFile
 // @Tags FileStorage
 // @Description download audio image
 // @Accept multipart/form-data
@@ -217,18 +217,18 @@ func (h *Handler) downloadFile(c *gin.Context) {
 // @Failure 400,404 {object} errorResponse
 // @Failure 500 {object} errorResponse
 // @Failure default {object} errorResponse
-// @Router /file/download-audio-image-file [post]
-func (h *Handler) downloadAudioImageFile(c *gin.Context) {
+// @Router /v1/file/download-audio-image [post]
+func (h *Handler) downloadAudioImage(c *gin.Context) {
 	userID, err := getUserId(c)
 	if err != nil {
-		logrus.Errorf("downloadFile err: %v", err)
+		logrus.Errorf("downloadAudioImage err: %v", err)
 		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't get userID"})
 		return
 	}
 
 	filename := c.PostForm("filename")
 	if len(filename) == 0 {
-		logrus.Errorf("downloadFile err: %v", err)
+		logrus.Errorf("downloadAudioImage err: %v", err)
 		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't get filename"})
 		return
 	}
@@ -240,7 +240,7 @@ func (h *Handler) downloadAudioImageFile(c *gin.Context) {
 
 	resp, err := h.services.DownloadAudioImageFile(req)
 	if err != nil {
-		logrus.Errorf("downloadAudioImageFile err: %v", err)
+		logrus.Errorf("downloadAudioImage err: %v", err)
 
 		var appError *appError.FileNotFound
 		if errors.As(err, &appError) {
@@ -254,22 +254,10 @@ func (h *Handler) downloadAudioImageFile(c *gin.Context) {
 
 	fullFileName := resp.FileInfo.FileName + ".jpg"
 	c.Header("Content-Type", "image/jpeg")
-
 	http.ServeContent(c.Writer, c.Request, fullFileName, time.Now(), resp.FileBody)
-
-	//var buf bytes.Buffer
-	//resp.FileStream.Read()
-	//_, err = io.Copy(buff, resp.FileStream)
-	//if err != nil {
-	//	logrus.Errorf("downloadAudioImageFile err: can't copy file to resp stream, err: %v", err)
-	//	c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't download file"})
-	//	return
-	//}
-
-	//c.Writer.WriteHeader(200)
 }
 
-// StreamAudio @Summary StreamAudio
+// downloadAudio @Summary DownloadAudio
 // @Tags FileStorage
 // @Description stream audio file
 // @Accept multipart/form-data
@@ -282,18 +270,18 @@ func (h *Handler) downloadAudioImageFile(c *gin.Context) {
 // @Failure 400,404 {object} errorResponse
 // @Failure 500 {object} errorResponse
 // @Failure default {object} errorResponse
-// @Router /file/stream-audio [post]
-func (h *Handler) streamAudio(c *gin.Context) {
+// @Router /v1/file/download-audio [post]
+func (h *Handler) downloadAudio(c *gin.Context) {
 	userID, err := getUserId(c)
 	if err != nil {
-		logrus.Errorf("downloadFile err: %v", err)
+		logrus.Errorf("downloadAudio err: %v", err)
 		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't get userID"})
 		return
 	}
 
 	filename := c.PostForm("filename")
 	if len(filename) == 0 {
-		logrus.Errorf("downloadFile err: %v", err)
+		logrus.Errorf("downloadAudio err: %v", err)
 		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't get filename"})
 		return
 	}
@@ -305,7 +293,7 @@ func (h *Handler) streamAudio(c *gin.Context) {
 
 	resp, err := h.services.DownloadFile(req, models.MP3)
 	if err != nil {
-		logrus.Errorf("downloadFile err: %v", err)
+		logrus.Errorf("downloadAudio err: %v", err)
 
 		var appError *appError.FileNotFound
 		if errors.As(err, &appError) {
@@ -327,16 +315,21 @@ func (h *Handler) streamAudio(c *gin.Context) {
 	buffer := make([]byte, bufferSize)
 	for {
 		bytesRead, err := resp.FileStream.Read(buffer)
-		if err != nil {
-			c.Writer.WriteHeader(http.StatusBadRequest)
+		if err != nil && err.Error() == "EOF" {
+			logrus.Infof("downloadAudio succesful")
 			break
+		}
+		if err != nil {
+			logrus.Errorf("downloadAudio err: %v", err)
+			c.Writer.WriteHeader(http.StatusBadRequest)
+			return
 		}
 		c.Writer.Write(buffer[:bytesRead])
 		c.Writer.Flush()
 	}
 }
 
-// DropFile @Summary DropFile
+// dropFile @Summary DropFile
 // @Tags FileStorage
 // @Description drop file
 // @Accept multipart/form-data
@@ -349,18 +342,18 @@ func (h *Handler) streamAudio(c *gin.Context) {
 // @Failure 400,404 {object} errorResponse
 // @Failure 500 {object} errorResponse
 // @Failure default {object} errorResponse
-// @Router /file/drop [delete]
+// @Router /v1/file/drop [delete]
 func (h *Handler) dropFile(c *gin.Context) {
 	userID, err := getUserId(c)
 	if err != nil {
-		logrus.Errorf("uploadFile err: %v", err)
+		logrus.Errorf("dropFile err: %v", err)
 		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't get userID"})
 		return
 	}
 
 	filename := c.PostForm("filename")
 	if len(filename) == 0 {
-		logrus.Errorf("uploadFile err: %v", err)
+		logrus.Errorf("dropFile err: %v", err)
 		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't get filename"})
 		return
 	}
@@ -372,13 +365,10 @@ func (h *Handler) dropFile(c *gin.Context) {
 
 	err = h.services.DropFile(req)
 	if err != nil {
-		logrus.Errorf("DropFile err: %v", err)
+		logrus.Errorf("dropFile err: %v", err)
 		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"can't drop file"})
-
 		return
 	}
 
-	c.JSON(http.StatusOK, map[string]interface{}{
-		"res": "ok",
-	})
+	c.JSON(http.StatusOK, okResponse{"ok"})
 }

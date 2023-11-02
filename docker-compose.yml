@@ -15,7 +15,17 @@ services:
       - "2717:27017"
     volumes:
       - ../mongodb-data:/data/db
-      - ./migrations/mongo:/docker-entrypoint-initdb.d
 
+  file-manager:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: file-manager
+    ports:
+      - "8001:8080"
+    depends_on:
+      - mongo-file-db
+    volumes:
+      - ./configs:/configs
 volumes:
   mongodb-data:

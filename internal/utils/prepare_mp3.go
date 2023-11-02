@@ -2,12 +2,14 @@ package utils
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/dhowden/tag"
 	"github.com/hajimehoshi/go-mp3"
 	"github.com/pkg/errors"
-	"io"
 )
 
+// HandleMP3File ...
 func HandleMP3File(file io.ReadSeeker) (fileImageBytes []byte, duration, artist string, err error) {
 	metadata, err := tag.ReadFrom(file)
 	if err != nil {

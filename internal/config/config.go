@@ -7,6 +7,7 @@ import (
 	"os"
 )
 
+// Config ...
 type Config struct {
 	AppHost           string `json:"app_host,omitempty"`
 	AppPort           uint64 `json:"app_port,omitempty"`
@@ -23,9 +24,8 @@ type Config struct {
 	DBFileCollectionName string `json:"db_file_collection_name"`
 }
 
+// Validate ...
 func (s *Config) Validate() error {
-	// Use json.Unmarshal to decode the JSON data into the struct
-
 	if len(s.AppHost) == 0 {
 		return errors.New("AppHost is empty")
 	}
@@ -77,6 +77,7 @@ func (s *Config) Validate() error {
 	return nil
 }
 
+// InitConfig ...
 func InitConfig(path string) (*Config, error) {
 	fileContent, err := os.ReadFile(path)
 	if err != nil {

@@ -1,8 +1,10 @@
 package mongodb
 
 import (
-	"FreeMusic/internal/models"
 	"context"
+
+	"FreeMusic/internal/models"
+
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -10,10 +12,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
 )
 
+// DropFile ...
 func (m *mongoFileStorage) DropFile(ctx context.Context, req models.DropFileRequest) error {
 	db := m.client.Database(m.databaseName)
 
-	fileInfo, err := m.dropFileInfo(db, req)
+	fileInfo, err := m.dropFileInfo(ctx, db, req)
 	if err != nil {
 		return errors.Wrap(err, "DropFile error")
 	}
@@ -31,7 +34,8 @@ func (m *mongoFileStorage) DropFile(ctx context.Context, req models.DropFileRequ
 	return nil
 }
 
-func (m *mongoFileStorage) dropFileInfo(db *mongo.Database, req models.DropFileRequest) (*models.FileInfo, error) {
+// dropFileInfo ...
+func (m *mongoFileStorage) dropFileInfo(ctx context.Context, db *mongo.Database, req models.DropFileRequest) (*models.FileInfo, error) {
 	filter := bson.M{
 		"file_name": req.FileName,
 		"user_id":   req.UserID,
@@ -40,7 +44,7 @@ func (m *mongoFileStorage) dropFileInfo(db *mongo.Database, req models.DropFileR
 
 	collection := db.Collection(m.fileCollectionName)
 
-	err := collection.FindOneAndDelete(context.Background(), filter).Decode(&deletedDocument)
+	err := collection.FindOneAndDelete(ctx, filter).Decode(&deletedDocument)
 	if err != nil {
 		return nil, errors.Wrap(err, "dropFileInfo: can't drop file info")
 	}
@@ -48,6 +52,7 @@ func (m *mongoFileStorage) dropFileInfo(db *mongo.Database, req models.DropFileR
 	return &deletedDocument, nil
 }
 
+// dropFileInFileStorage ...
 func (m *mongoFileStorage) dropFileInFileStorage(ctx context.Context, db *mongo.Database, fileIDHex string) error {
 	fs, err := gridfs.NewBucket(db)
 	if err != nil {

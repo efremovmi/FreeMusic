@@ -1,14 +1,17 @@
 package mongodb
 
 import (
-	appError "FreeMusic/internal/app_errors"
-	"FreeMusic/internal/models"
 	"context"
 	"fmt"
+
+	appError "FreeMusic/internal/app_errors"
+	"FreeMusic/internal/models"
+
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+// GetAllMusicFilesInfo ...
 func (m *mongoFileStorage) GetAllMusicFilesInfo(ctx context.Context, userID uint64) (*models.GetAllMusicFilesInfoResponse, error) {
 	db := m.client.Database(m.databaseName)
 
@@ -17,11 +20,11 @@ func (m *mongoFileStorage) GetAllMusicFilesInfo(ctx context.Context, userID uint
 		"user_id": userID,
 	}
 
-	cursor, err := collection.Find(context.Background(), filter)
+	cursor, err := collection.Find(ctx, filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "GetAllMusicFilesInfoResponse: can't get cursor on collections")
 	}
-	defer cursor.Close(context.Background())
+	defer cursor.Close(ctx)
 
 	var fileInfo models.FileInfo
 	var resp models.GetAllMusicFilesInfoResponse
@@ -29,7 +32,7 @@ func (m *mongoFileStorage) GetAllMusicFilesInfo(ctx context.Context, userID uint
 
 	resp.InfoAboutMusicFile = make([]models.InfoAboutMusicFile, 0)
 	var count uint64
-	for cursor.Next(context.Background()) {
+	for cursor.Next(ctx) {
 		isGetDataFromDB = true
 		if err := cursor.Decode(&fileInfo); err != nil {
 			return nil, errors.Wrap(err, "GetAllMusicFilesInfo: can't decode file from db")

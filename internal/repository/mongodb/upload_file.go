@@ -1,18 +1,21 @@
 package mongodb
 
 import (
+	"bytes"
+	"io"
+
 	appError "FreeMusic/internal/app_errors"
 	"FreeMusic/internal/models"
-	"bytes"
+
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
 	"golang.org/x/net/context"
-	"io"
 )
 
+// UploadFile ...
 func (m *mongoFileStorage) UploadFile(ctx context.Context, req models.UploadFileRequest) (*models.UploadFileResponse, error) {
 	db := m.client.Database(m.databaseName)
 
@@ -37,12 +40,14 @@ func (m *mongoFileStorage) UploadFile(ctx context.Context, req models.UploadFile
 	return &models.UploadFileResponse{IDHex: resultID}, nil
 }
 
+// dropFileIfError ...
 func (m *mongoFileStorage) dropFileIfError(ctx context.Context, db *mongo.Database, IDHex string, err error) {
 	if err != nil {
 		m.dropFileInFileStorage(ctx, db, IDHex)
 	}
 }
 
+// saveFileImageInFileStorage ...
 func (m *mongoFileStorage) saveFileImageInFileStorage(db *mongo.Database, req models.UploadFileRequest) (string, error) {
 	fs, err := gridfs.NewBucket(db)
 	if err != nil {
@@ -64,6 +69,7 @@ func (m *mongoFileStorage) saveFileImageInFileStorage(db *mongo.Database, req mo
 	return uploadStream.FileID.(primitive.ObjectID).Hex(), nil
 }
 
+// saveFileInFileStorage ...
 func (m *mongoFileStorage) saveFileInFileStorage(db *mongo.Database, req models.UploadFileRequest) (string, error) {
 	fs, err := gridfs.NewBucket(db)
 	if err != nil {
@@ -84,6 +90,7 @@ func (m *mongoFileStorage) saveFileInFileStorage(db *mongo.Database, req models.
 	return uploadStream.FileID.(primitive.ObjectID).Hex(), nil
 }
 
+// saveInfoAboutFile ...
 func (m *mongoFileStorage) saveInfoAboutFile(ctx context.Context, db *mongo.Database, req models.UploadFileRequest, fileIDHex, fileImageIDHex string) (string, error) {
 	document := bson.M{
 		"user_id":           req.UserID,

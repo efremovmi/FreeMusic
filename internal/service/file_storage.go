@@ -1,12 +1,15 @@
 package service
 
 import (
+	"context"
+
 	"FreeMusic/internal/models"
 	"FreeMusic/internal/repository"
-	"context"
+
 	"github.com/pkg/errors"
 )
 
+// fileManager ...
 type fileManager struct {
 	repo repository.FileStorage
 }
@@ -18,6 +21,7 @@ func NewFileManager(repo *repository.FileStorage) *fileManager {
 	}
 }
 
+// UploadFile ...
 func (f *fileManager) UploadFile(req models.UploadFileRequest) (*models.UploadFileResponse, error) {
 	resp, err := f.repo.UploadFile(context.Background(), req)
 	if err != nil {
@@ -27,6 +31,7 @@ func (f *fileManager) UploadFile(req models.UploadFileRequest) (*models.UploadFi
 	return resp, nil
 }
 
+// DownloadFile ...
 func (f *fileManager) DownloadFile(req models.DownloadFileRequest, fileExtension models.FileExtension) (*models.DownloadFileResponse, error) {
 	resp, err := f.repo.DownloadFile(context.Background(), req, fileExtension)
 	if err != nil {
@@ -36,6 +41,7 @@ func (f *fileManager) DownloadFile(req models.DownloadFileRequest, fileExtension
 	return resp, nil
 }
 
+// DownloadAudioImageFile ...
 func (f *fileManager) DownloadAudioImageFile(req models.DownloadFileRequest) (*models.DownloadAudioImageFileResponse, error) {
 	resp, err := f.repo.DownloadAudioImageFile(context.Background(), req)
 	if err != nil {
@@ -45,6 +51,7 @@ func (f *fileManager) DownloadAudioImageFile(req models.DownloadFileRequest) (*m
 	return resp, nil
 }
 
+// GetAllMusicFilesInfo ...
 func (f *fileManager) GetAllMusicFilesInfo(userID uint64) (*models.GetAllMusicFilesInfoResponse, error) {
 	resp, err := f.repo.GetAllMusicFilesInfo(context.Background(), userID)
 	if err != nil {
@@ -54,6 +61,7 @@ func (f *fileManager) GetAllMusicFilesInfo(userID uint64) (*models.GetAllMusicFi
 	return resp, nil
 }
 
+// DropFile ...
 func (f *fileManager) DropFile(req models.DropFileRequest) error {
 	err := f.repo.DropFile(context.Background(), req)
 	if err != nil {

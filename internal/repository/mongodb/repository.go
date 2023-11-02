@@ -1,21 +1,25 @@
 package mongodb
 
 import (
-	"FreeMusic/internal/config"
 	"context"
 	"fmt"
+
+	"FreeMusic/internal/config"
+
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+// mongoFileStorage ...
 type mongoFileStorage struct {
 	client             *mongo.Client
 	databaseName       string
 	fileCollectionName string
 }
 
-func NewMongoFileStorage(config config.Config) (*mongoFileStorage, error) {
+// NewMongoFileStorage ...
+func NewMongoFileStorage(config *config.Config) (*mongoFileStorage, error) {
 	clientOptions := options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s@%s:%d",
 		config.DbFilesUsername, config.DbFilesPassword,
 		config.DbFilesHost, config.DbFilesPort))
@@ -36,6 +40,7 @@ func NewMongoFileStorage(config config.Config) (*mongoFileStorage, error) {
 	}, nil
 }
 
+// Disconnect ...
 func (m *mongoFileStorage) Disconnect(ctx context.Context) {
 	m.client.Disconnect(ctx)
 }

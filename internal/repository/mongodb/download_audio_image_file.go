@@ -1,17 +1,20 @@
 package mongodb
 
 import (
-	"FreeMusic/internal/app_errors"
-	"FreeMusic/internal/models"
 	"bytes"
 	"context"
+
+	"FreeMusic/internal/app_errors"
+	"FreeMusic/internal/models"
+
 	"github.com/pkg/errors"
 )
 
+// DownloadAudioImageFile ...
 func (m *mongoFileStorage) DownloadAudioImageFile(ctx context.Context, req models.DownloadFileRequest) (*models.DownloadAudioImageFileResponse, error) {
 	db := m.client.Database(m.databaseName)
 
-	fileInfo, err := findIDHexByFileNameAndUserID(m, db, req, models.MP3)
+	fileInfo, err := findIDHexByFileNameAndUserID(ctx, m, db, req, models.MP3)
 	if err != nil {
 		return nil, errors.Wrap(err, "DownloadAudioImageFile error")
 	}

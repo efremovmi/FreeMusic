@@ -4,7 +4,6 @@ import (
 	"FreeMusic/internal/config"
 	"FreeMusic/internal/repository/mongodb"
 	"FreeMusic/internal/server"
-	"os"
 	"os/signal"
 	"syscall"
 
@@ -17,6 +16,10 @@ import (
 )
 
 func Run(configPath string) {
+	ctx := context.Background()
+	ctx, cancel := signal.NotifyContext(ctx, syscall.SIGTERM, syscall.SIGINT)
+	defer cancel()
+
 	logrus.SetFormatter(new(logrus.JSONFormatter))
 
 	config, err := config.InitConfig(configPath)
@@ -24,7 +27,7 @@ func Run(configPath string) {
 		logrus.Fatalf("error initializing configs: %v", err)
 	}
 
-	fileStorage, err := mongodb.NewMongoFileStorage(*config)
+	fileStorage, err := mongodb.NewMongoFileStorage(config)
 	if err != nil {
 		logrus.Fatalf("error initializing configs: %v", err)
 	}
@@ -35,25 +38,13 @@ func Run(configPath string) {
 	handlers := handler.NewHandler(services)
 
 	srv := server.NewServer(config)
-	go func() {
-		if err := srv.Run(handlers.InitRoutes()); err != nil {
-			logrus.Fatalf("error occured while running http server: %s", err.Error())
-		}
-	}()
-
 	logrus.Print("FreeMusic Started")
-
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
-	<-quit
-
+	if err := srv.Run(handlers.InitRoutes()); err != nil {
+		logrus.Fatalf("error occured while running http server: %v", err.Error())
+	}
 	logrus.Print("FreeMusic Shutting Down")
 
-	if err := srv.Shutdown(context.Background()); err != nil {
-		logrus.Errorf("error occured on server shutting down: %s", err.Error())
+	if err := srv.Shutdown(ctx); err != nil {
+		logrus.Errorf("error occured on server shutting down: %v", err.Error())
 	}
-	//
-	//if err := db.Close(); err != nil {
-	//	logrus.Errorf("error occured on db connection close: %s", err.Error())
-	//}
 }
