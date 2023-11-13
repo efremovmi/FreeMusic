@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"FreeMusic/internal/metrics"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 
 	"FreeMusic/internal/service"
@@ -24,7 +26,10 @@ func NewHandler(services *service.Service) *Handler {
 
 // InitRoutes ...
 func (h *Handler) InitRoutes() *gin.Engine {
+	metrics.RegisterMetrics()
 	router := gin.Default()
+
+	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
