@@ -12,7 +12,7 @@
 
   "db_files_host": "mongo-file",
   "db_files_port": 27017,
-  "db_files_username": "developer",
+  "db_files_username": "admin",
   "db_files_password": "1q2w3e4r5t",
   "db_files_name": "free-music",
   "db_file_collection_name": "files"

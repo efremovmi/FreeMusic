@@ -7,7 +7,7 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: 1q2w3e4r5t
-      MONGO_DB_DEV_USERNAME: developer
+      MONGO_DB_DEV_USERNAME: admin
       MONGO_DB_DEV_PASSWORD: 1q2w3e4r5t
       MONGO_DB_DATABASE: free-music
       MONGO_DB_COLLECTION: file
