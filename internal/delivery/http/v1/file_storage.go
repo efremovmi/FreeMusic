@@ -34,7 +34,8 @@ import (
 // @Failure default {object} errorResponse
 // @Router /v1/file/upload [post]
 func (h *Handler) uploadFile(c *gin.Context) {
-	metrics.UploadCounter.Inc()
+	metrics.HttpRequestsRPS.WithLabelValues("/upload").Observe(1)
+
 	userID, err := getUserId(c)
 	if err != nil {
 		logrus.Errorf("uploadFile err: %v", err)

@@ -2,13 +2,17 @@ package metrics
 
 import "github.com/prometheus/client_golang/prometheus"
 
-var UploadCounter = prometheus.NewCounter(
-	prometheus.CounterOpts{
-		Name: "upload_request_count",
-		Help: "No of request handled by upload handler",
-	},
+var (
+	HttpRequestsRPS = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "http_requests_rps",
+			Help:    "HTTP requests per second",
+			Buckets: prometheus.DefBuckets,
+		},
+		[]string{"endpoint"},
+	)
 )
 
 func RegisterMetrics() {
-	prometheus.MustRegister(UploadCounter)
+	prometheus.MustRegister(HttpRequestsRPS)
 }

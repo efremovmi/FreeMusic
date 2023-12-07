@@ -2,10 +2,10 @@ package v1
 
 import (
 	"FreeMusic/internal/metrics"
+	"FreeMusic/internal/service"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
-
-	"FreeMusic/internal/service"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/swaggo/files"       // swagger embed files
@@ -50,6 +50,13 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		c.Next()
 	})
 
+	// Горутина для измерения RPS
+	go func() {
+		for range time.Tick(1 * time.Second) {
+			metrics.HttpRequestsRPS.WithLabelValues("/upload").Observe(0)
+		}
+	}()
+
 	fileAPI := router.Group("/v1/file", h.userIdentity)
 	{
 		fileAPI.POST("/upload", h.uploadFile)
@@ -59,6 +66,5 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		fileAPI.GET("/get-all-music", h.getAllMusicFilesInfo)
 		fileAPI.DELETE("/drop", h.dropFile)
 	}
-
 	return router
 }
